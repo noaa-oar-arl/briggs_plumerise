@@ -7,7 +7,7 @@ FCFLAGS = -g -c -Wall -Wextra -Wconversion -Og -pedantic -fcheck=bounds -fmax-er
 FLFLAGS =
 
 # source files and objects
-SRCS = plumerise_sofiev_mod.F90 sofiev_driver.F90
+SRCS = plumerise_briggs_mod.F90 briggs_driver.F90
 
 # program name
 PROGRAM = sofiev

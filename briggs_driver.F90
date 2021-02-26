@@ -1,16 +1,16 @@
-      program sofiev_driver
+      program briggs_driver
 
-!  the driver to run the Sofiev plume rise algorithm
+!  the driver to run the Briggs plume rise algorithm
 !
 !  Ref: M. Sofiev et al., Evaluation of the smoke-injection
 !    height from wild-land fires using remote sensing data.
 !    Atmos. Chem. Phys., 12, 1995-2006, 2012.
 !
 !  History:
-!    Prototype: Daniel Tong, 11/06/2019
+!    Prototype: Patrick Campbell, 02/26/2021
 !
 !-------------------------------------------------------------
-      use plumerise_sofiev_mod
+      use plumerise_briggs_mod
 
       implicit none
 
@@ -72,8 +72,8 @@
 
       !open(10, file='outfile.txt', status='new')
 
-      call sofiev_plmrise_column(profile%Z,profile%T,profile%P,PBLH,psfc,frp,base_emis, plmHGT, column_emiss)
+      call plmris(profile%Z,profile%T,profile%P,PBLH,psfc,frp,base_emis, plmHGT, column_emiss)
 
       write(*,*) 'SUM of total emiss:' , SUM(column_emiss)
 
-    end program sofiev_driver
+    end program briggs_driver
