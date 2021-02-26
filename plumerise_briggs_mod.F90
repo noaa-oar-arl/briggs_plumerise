@@ -363,9 +363,6 @@ contains
 !         WSTK = WSPD( 1 )
 !      END IF
 
-      DEALLOCATE ( TV, TF, ZSTK, DDZF, DTHDZ, WSPD )
-
-
 !End PREPLM Calculation Functions -------------------
 
 !Begin Briggs Plume Rise Calculation----------------
@@ -572,6 +569,8 @@ contains
       RETURN
 
 !End Briggs Plume Rise Calculation----------------
+
+      DEALLOCATE ( TV, TF, ZSTK, DDZF, DTHDZ, WSPD )
 
       END SUBROUTINE PLMRIS
 
