@@ -19,31 +19,31 @@
         integer :: lay          !Layer number
         real    :: zf           !Layer surface heights (m)
         real    :: zh           !Layer center  heights (m)
+        real    :: pres         !Pressures at full layer hts (hPa)
         real    :: ta           !Temperatures (K)
         real    :: qv           !Mixing Ratios (kg/kg)
         real    :: uw           !X-direction winds (m/s)
         real    :: vw           !Y-direction winds (m/s)
-        real    :: pres         !Pressures at full layer hts (hPa)
       end TYPE profile_type
 
       type(profile_type) :: profile(35)
 
-        integer i,i0
-        real plmHGT    !finally plume centerline height (m)
-
 ! ! ... this block gives example emiss layers, 2D parameters, and stack inputs to 
 ! !     Briggs that would be passed by rrfs_cmaq/ccpp
 ! !     Ex values taken from NAQFC 5X (i=329;j=161) on Aug 01,2019
-        integer, parameter    ::    emlays=35    !Number of total emission layers
-        real,    parameter    ::    hfx=25.0     !Sensible Heat Flux (W/m2)
-        real,    parameter    ::    hmix=500.0   !Mixing Height (m)
-        real,    parameter    ::    ustar=0.2    !Friction velocity (m/s)
-        real,    parameter    ::    tsfc=291.0   !Surface temperature (K)
-        real,    parameter    ::    psfc=980.0   !Surface pressure (hPa)
-        real,    parameter    ::    stkdm=7.0    !Stack diameter (m)
-        real,    parameter    ::    stkht=181.0  !Stack height (m)
-        real,    parameter    ::    stktk=348.0  !Stack exit temperature (K)
-        real,    parameter    ::    stkve=27.0   !Stack exit velocity (m/s)
+        integer, parameter    ::    emlays=35          !Number of total emission layers
+        real,    parameter    ::    hfx=25.0           !Sensible Heat Flux (W/m2)
+        real,    parameter    ::    hmix=500.0         !Mixing Height (m)
+        real,    parameter    ::    ustar=0.2          !Friction velocity (m/s)
+        real,    parameter    ::    tsfc=291.0         !Surface temperature (K)
+        real,    parameter    ::    psfc=980.0         !Surface pressure (hPa)
+        real,    parameter    ::    stkdm=7.0          !Stack diameter (m)
+        real,    parameter    ::    stkht=181.0        !Stack height (m)
+        real,    parameter    ::    stktk=348.0        !Stack exit temperature (K)
+        real,    parameter    ::    stkve=27.0         !Stack exit velocity (m/s)
+
+        integer i,i0
+        real plmHGT    !final plume centerline height (m)
 
 ! ... read met profile data that should be passed by rrfs_cmaq/ccpp
       open(9,  file='input_profile.txt',  status='old')
@@ -52,15 +52,12 @@
       do i=1, 35
         read(9, *) profile(i)
       end do
-      !open(10, file='outfile.txt', status='new')
 
-!      call plmris(profile%Z,profile%T,profile%P,PBLH,psfc,frp,base_emis, plmHGT, column_emiss)
       call plmris(profile%zf,profile%zh,profile%ta,profile%qv, &
                   profile%uw,profile%vw,profile%pres, &
                   hfx,hmix,ustar,tsfc,psfc,emlays, &
                   stkdm,stkht,stktk,stkve,plmHGT)
 
-!      write(*,*) 'SUM of total emiss:' , SUM(column_emiss)
-      write(*,*) 'Plume Center Height:' , plmHGT
+      write(*,*) 'Plume Center Height (m):' , plmHGT
 
     end program briggs_driver

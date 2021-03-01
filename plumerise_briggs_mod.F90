@@ -119,108 +119,14 @@ contains
 
 ! Geodetic Constants:
 
-! radius of the earth [ m ]
-! FSB: radius of sphere having same surface area as
-! Clarke ellipsoid of 1866 ( Source: Snyder, 1987)
-!     REAL, PARAMETER :: REARTH = 6370997.0
-      REAL, PARAMETER :: REARTH = 6370000.0    ! default Re in MM5 and WRF
-
-! length of a sidereal day [ sec ]
-! FSB: Source: CRC76 pp. 14-6
-      REAL, PARAMETER :: SIDAY = 86164.09
-
 ! mean gravitational acceleration [ m/sec**2 ]
 ! FSB: Value is mean of polar and equatorial values.
 ! Source: CRC Handbook (76th Ed) pp. 14-6
       REAL, PARAMETER :: GRAV = 9.80622
 
-! latitude degrees to meters
-      REAL, PARAMETER :: DG2M = REARTH * PI180
-
-! Solar Constant:
-! Solar constant [ W/m**2 ], p14-2 CRC76
-      REAL, PARAMETER :: SOLCNST = 1373.0
-
-! Fundamental Constants: ( Source: CRC76, pp. 1-1 to 1-6)
-
-! Avogadro's Constant [ number/mol ]
-      REAL,      PARAMETER :: AVO  = 6.0221367E23
-! The NIST Reference on Constants, Units, and Uncertainty. US National
-! Institute of Standards and Technology. June 2015. Retrieved 2017-04-21.
-! http://physics.nist.gov/cgi-bin/cuu/Value?na
-      REAL( 8 ), PARAMETER :: DAVO = 6.02214085774D23
-
-! universal gas constant [ J/mol-K ]
-      REAL, PARAMETER :: RGASUNIV = 8.314510
-! The NIST Reference on Constants, Units, and Uncertainty. US National
-! Institute of Standards and Technology. June 2015. Retrieved 2017-04-21.
-! http://physics.nist.gov/cgi-bin/cuu/Value?r
-      REAL( 8 ), PARAMETER :: DRGASUNIV = 8.314459848D0
-
-! standard atmosphere  [ Pa ]
-      REAL, PARAMETER :: STDATMPA = 101325.0
-
-! Standard Temperature [ K ]
-      REAL, PARAMETER :: STDTEMP = 273.15
-
-! Stefan-Boltzmann [ W/(m**2 K**4) ]
-      REAL, PARAMETER :: STFBLZ = 5.67051E-8
-
-! FSB Non-MKS
-
-! Molar volume at STP [ L/mol ] Non MKS units
-      REAL, PARAMETER :: MOLVOL = 22.41410
-
-! Atmospheric Constants:
-
-! mean molecular weight for dry air [ g/mol ]
-! FSB: 78.06% N2, 21% O2, and 0.943% A on a mole
-! fraction basis ( Source : Hobbs, 1995) pp. 69-70
-      REAL, PARAMETER :: MWAIR = 28.9628
-! dry-air gas constant [ J / kg-K ]
-      REAL, PARAMETER :: RDGAS = 1.0E3 * RGASUNIV / MWAIR   ! 287.07548994
-
-! mean molecular weight for water vapor [ g/mol ]
-      REAL, PARAMETER :: MWWAT = 18.0153
-
-! gas constant for water vapor [ J/kg-K ]
-      REAL, PARAMETER :: RWVAP = 1.0E3 * RGASUNIV / MWWAT   ! 461.52492604
-
-! FSB NOTE: CPD, CVD, CPWVAP and CVWVAP are calculated assuming dry air and
-! water vapor are classical ideal gases, i.e. vibration does not contribute
-! to internal energy.
-
-! specific heat of dry air at constant pressure [ J/kg-K ]
-      REAL, PARAMETER :: CPD = 7.0 * RDGAS / 2.0            ! 1004.7642148
-
-! specific heat of dry air at constant volume [ J/kg-K ]
-      REAL, PARAMETER :: CVD = 5.0 * RDGAS / 2.0            ! 717.68872485
-
-! specific heat for water vapor at constant pressure [ J/kg-K ]
-      REAL, PARAMETER :: CPWVAP = 4.0 * RWVAP               ! 1846.0997042
-
-! specific heat for water vapor at constant volume [ J/kg-K ]
-      REAL, PARAMETER :: CVWVAP = 3.0 * RWVAP               ! 1384.5747781
-
-! vapor press of water at 0 C [ Pa ] Source: CRC76 pp. 6-15
-      REAL, PARAMETER :: VP0 = 611.29
-
-! FSB The following values are taken from p. 641 of Stull (1988):
-
-! latent heat of vaporization of water at 0 C [ J/kg ]
-      REAL, PARAMETER :: LV0 = 2.501E6
-
-! Rate of change of latent heat of vaporization with
-! respect to temperature [ J/kg-K ]
-      REAL, PARAMETER :: DLVDT = 2370.0
-
-! latent heat of fusion of water at 0 C [ J/kg ]
-      REAL, PARAMETER :: LF0 = 3.34E5
-!.......................................................................
-
-!Parameters from PREPLM
-      INTEGER, PARAMETER :: DEG = 3       ! degree of interpolationg polynomial
-      REAL,    PARAMETER :: CTOK = 273.15 ! conversion from deg. C to deg. K
+!Parameters from PREPLM !Linear interpolation used instead-PCC
+!      INTEGER, PARAMETER :: DEG = 3       ! degree of interpolationg polynomial
+!      REAL,    PARAMETER :: CTOK = 273.15 ! conversion from deg. C to deg. K
 
 ! Local Variables:
       INTEGER IQ              ! stability class:  1=unstbl, 2=neut, 3=stbl, 4=use DHM
@@ -239,7 +145,7 @@ contains
       REAL    WPLM            ! wind speed  at top of plume (m/s)
       REAL    ZMIX            ! hmix - hs
 ! Local Variables from PREPLM
-      INTEGER      L, M, I, J
+      INTEGER      L, I, J, K
       REAL         ES
       REAL         QSFC
       REAL         TVSFC
@@ -250,7 +156,7 @@ contains
 !     REAL         TF( EMLAYS )   ! Full-layer height temperatures
       REAL, ALLOCATABLE :: TV( : )   ! Virtual temperature
       REAL, ALLOCATABLE :: TF( : )   ! Full-layer height temperatures
-      REAL         P, Q, PP
+      REAL         P, Q, PP, DD, DD2
       REAL         DZZ
       REAL         DELZ
       INTEGER LSTK            ! first L: ZF(L) > STKHT      
@@ -302,7 +208,9 @@ contains
          TV( L ) = TA( L ) * ( 1.0 + 0.622 * ( QV( L ) / ( 1.0 + QV( L ) ) ) )
       END DO
 
-      ES    = 6.1078 * EXP( 5384.21 / CTOK - 5384.21 / TS )
+!      ES    = 6.1078 * EXP( 5384.21 / CTOK - 5384.21 / TS )  !Temperature input
+!      already in Kelvin
+      ES    = 6.1078 * EXP( 5384.21 * ( (1.0/273.15) - (1.0/TS) ) )
       QSFC  = 0.622 * ES / ( PSFC - ES )
       TVSFC = TS * ( 1.0 + 0.6077 * QSFC )
       THETG = TVSFC * ( 1000.0 / PSFC ) ** 0.286
@@ -343,21 +251,26 @@ contains
 
 !      IF ( .NOT. FIREFLG ) THEN
 ! Interpolate ambient temp. and windspeed to top of stack using DEG deg polynomial
-         M    = MAX( 1, LSTK - DEG - 1 )
+!         M    = MAX( 1, LSTK - DEG - 1 )
 !         TSTK =      POLY( STKHT, ZH( M:EMLAYS ), TA( M:EMLAYS ), DEG )
 !         WSTK = MAX( POLY( STKHT, ZH( M:EMLAYS ), WSPD( M:EMLAYS ), DEG ), 0.1 )
 
-!Simple lagrangian polynomial (i.e., linear) interpolation in place of IOAPI POLY Function - PCC
-        PP=1
-        DO I = 1, EMLAYS
-        DO J = 1, EMLAYS
-        IF (I.EQ.J) CYCLE
-        PP=PP*(STKHT-ZH(J))/(ZH(I)-ZH(J))
-        TSTK=TSTK+PP*TA(I)
-        WSTK=WSTK+PP*WSPD(I)
-        END DO
-        END DO
-        WSTK=MAX(WSTK,0.1)
+!Rough nearest neighbor interpolation in place of IOAPI POLY Function (needs
+!updating to bi-linear, polynomial, etc...) - P.C. Campbell
+       DO I = 1, EMLAYS
+         K = 1
+         DD = abs ( STKHT - ZH(K) )
+         DO J = 2, EMLAYS
+           DD2 = abs ( STKHT - ZH(J) )
+           IF ( DD2 < DD ) THEN
+            K = J
+            DD = DD2
+           END IF
+         END DO
+         TSTK = TA(K)
+         WSTK = WSPD(K)
+       END DO
+       WSTK=MAX(WSTK,0.1)
 !      ELSE
 !         TSTK = TS
 !         WSTK = WSPD( 1 )
