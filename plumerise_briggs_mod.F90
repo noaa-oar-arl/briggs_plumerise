@@ -24,9 +24,9 @@ contains
 !------------------------------------------------------------------------!
 
 !:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-      SUBROUTINE PLMRIS( EMLAYS, HFX, HMIX, STKDM, STKHT, STKTK, &
-                         STKVE, USTAR, TS, PSFC, TA, QV, UW, VW, &
-                         PRES, WSPD, ZF, ZH, ZPLM )
+      SUBROUTINE PLMRIS( ZF, ZH, TA, QV, UW, VW, PRES, &
+                         HFX, HMIX, USTAR, TS, PSFC, EMLAYS, & 
+                         STKDM, STKHT, STKTK, STKVE, ZPLM )
 
 !-----------------------------------------------------------------------
  

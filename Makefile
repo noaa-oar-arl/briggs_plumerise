@@ -10,7 +10,7 @@ FLFLAGS =
 SRCS = plumerise_briggs_mod.F90 briggs_driver.F90
 
 # program name
-PROGRAM = sofiev
+PROGRAM = briggs
 
 all: $(PROGRAM)
 
