@@ -58,6 +58,7 @@
                   hfx,hmix,ustar,tsfc,psfc,emlays, &
                   stkdm,stkht,stktk,stkve,plmHGT)
 
+      write(*,*) 'Stack Height (m):' , stkht
       write(*,*) 'Plume Center Height (m):' , plmHGT
 
     end program briggs_driver
