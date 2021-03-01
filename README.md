@@ -9,6 +9,7 @@ Column Inputs:
         real    :: qv           !Mixing Ratios (kg/kg)
         real    :: uw           !X-direction winds (m/s)
         real    :: vw           !Y-direction winds (m/s)
+
 Surface Inputs:        
         integer, parameter    ::    emlays=35          !Number of total emission layers
         real,    parameter    ::    hfx=25.0           !Sensible Heat Flux (W/m2)
@@ -20,5 +21,6 @@ Surface Inputs:
         real,    parameter    ::    stkht=181.0        !Stack height (m)
         real,    parameter    ::    stktk=348.0        !Stack exit temperature (K)
         real,    parameter    ::    stkve=27.0         !Stack exit velocity (m/s)
+
 Outputs:
         real plmHGT    !final plume centerline height (m)
