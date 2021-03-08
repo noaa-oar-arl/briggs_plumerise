@@ -24,3 +24,4 @@ Surface Inputs:
 
 Outputs:
         real plmHGT    !final plume centerline height (m)
+        real plmFRAC   !final plume fractions
