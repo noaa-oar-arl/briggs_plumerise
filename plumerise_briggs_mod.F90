@@ -525,70 +525,71 @@ ALLOCATE ( TV( EMLAYS ), TF( EMLAYS ), ZSTK( EMLAYS ), &
 
 ! Allocate plume to layers (compute layer plume fractions)
 
-      DO L1 = 1, EMLAYS - 1
-        IF ( ZBOT .LE. ZF( L1 ) ) THEN !bottom found at LBOT
-               LBOT = L1
-!               GO TO  122
-        IF ( ZTOP .LE. ZF( L1 ) ) THEN  ! plume in this layer
+         DO L = 1, EMLAYS - 1
+            IF ( ZBOT .LE. ZF( L ) ) THEN
+               LBOT = L
+               GO TO  122
+            ELSE
+               TFRAC( L ) = 0.0             ! fractions below plume
+            END IF
+         END DO
+         LBOT = EMLAYS                      !  fallback
+
+122      CONTINUE                           !  loop exit:  bottom found at LBOT
+
+         IF ( ZTOP .LE. ZF( LBOT ) ) THEN  ! plume in this layer
 
             TFRAC( LBOT ) = 1.0
             LTOP = LBOT
 
-            DO L2 = LBOT + 1, EMLAYS         ! fractions above plume 
-               TFRAC( L2 ) = 0.0
+            DO L = LBOT + 1, EMLAYS         ! fractions above plume
+               TFRAC( L ) = 0.0
             END DO
 
          ELSE IF ( LBOT .EQ. EMLAYS ) THEN  ! plume above top layer
 
             TFRAC( LBOT ) = 1.0
 
-            DO L3 = 1, EMLAYS - 1            ! fractions below plume
-               TFRAC( L3 ) = 0.0
+            DO L = 1, EMLAYS - 1            ! fractions below plume
+               TFRAC( L ) = 0.0
             END DO
 
          ELSE                               ! plume crosses layers
 
-            DO L4 = LBOT + 1, EMLAYS
-               IF ( ZTOP .LE. ZF( L4 ) ) THEN
-                  LTOP = L4
-!                  GO TO 126
-                 ZDIFF = ZTOP - ZBOT
-                 IF ( ZDIFF .GT. 0.0 ) THEN
-
-                  DDZZ  = 1.0 / ZDIFF
-                  TFRAC( LBOT ) = DDZZ * ( ZF( LBOT ) - ZBOT )
-                  TFRAC( LTOP ) = DDZZ * ( ZTOP - ZF( LTOP-1 ) )
-                 ELSE   ! ZDIFF .le. 0
-!               WRITE( CINT,'( I8 )' ) S
-!               WRITE( XMSG,94020 )
-!     &            'Infinitely small plume created for source:,'
-!     &            // CINT // CRLF() // BLANK10
-!     &            // 'All emissions put in first layer.'
-!               CALL M3WARN( PNAME, JDATE, JTIME, XMSG )
-                  WRITE( *, *) '    Infinitely small plume created '
-                  WRITE( *, *) '    All emissions put in first layer.'
-                  LBOT = 1; LTOP = 1
-                  TFRAC( LBOT ) = 1.0
-                 END IF
-            DO L5 = LBOT + 1, LTOP - 1       ! layers in plume
-               TFRAC( L5 ) = DDZZ * ( ZF( L5 ) - ZF( L5-1 ) )
-            END DO
-            DO L6 = LTOP + 1, EMLAYS         ! fractions above plume
-               TFRAC( L6 ) = 0.0
-            END DO
+            DO L = LBOT + 1, EMLAYS
+               IF ( ZTOP .LE. ZF( L ) ) THEN
+                  LTOP = L
+                  GO TO 126
                END IF
-
             END DO
             LTOP = EMLAYS                   !  fallback
-            
-         END IF      
 
-        ELSE 
-         TFRAC( L1 ) = 0.0             ! fractions below plume
-        END IF
-      END DO
-         LBOT = EMLAYS                      !  fallback
-      
+126         CONTINUE
+
+            ZDIFF = ZTOP - ZBOT
+            IF ( ZDIFF .GT. 0.0 ) THEN
+
+               DDZZ  = 1.0 / ZDIFF
+               TFRAC( LBOT ) = DDZZ * ( ZF( LBOT ) - ZBOT )
+               TFRAC( LTOP ) = DDZZ * ( ZTOP - ZF( LTOP-1 ) )
+
+            ELSE   ! ZDIFF .le. 0
+
+               LBOT = 1; LTOP = 1
+               TFRAC( LBOT ) = 1.0
+
+            END IF
+
+            DO L = LBOT + 1, LTOP - 1       ! layers in plume
+               TFRAC( L ) = DDZZ * ( ZF( L ) - ZF( L-1 ) )
+            END DO
+
+            DO L = LTOP + 1, EMLAYS         ! fractions above plume
+               TFRAC( L ) = 0.0
+            END DO
+
+         END IF
+
 !  If layer fractions are negative, put in the first layer
       TFRAC_MV = MINVAL( TFRAC( 1:EMLAYS ) )
          IF ( TFRAC_MV .LT. 0.0 ) THEN
