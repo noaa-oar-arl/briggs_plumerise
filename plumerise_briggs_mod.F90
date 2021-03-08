@@ -26,7 +26,7 @@ contains
 !:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
       SUBROUTINE PLMRIS( ZF, ZH, TA, QV, UW, VW, PRES, &
                          HFX, HMIX, USTAR, TS, PSFC, EMLAYS, & 
-                         STKDM, STKHT, STKTK, STKVE, ZPLM )
+                         STKDM, STKHT, STKTK, STKVE, ZPLM, TFRAC )
 
 !-----------------------------------------------------------------------
  
@@ -97,8 +97,8 @@ contains
       REAL,    INTENT( OUT ) :: ZPLM            ! temporarily, plume top height
                                                 ! above stack, finally plume centerline
                                                 ! height [m] (can be greater than the
-                                                ! height of the top of the EMLAYS layer)
-
+                                                     ! height of the top of the EMLAYS layer)
+      REAL, INTENT( OUT )  :: TFRAC( : ) ! Plume Fractions
 ! Parameters:
       REAL, PARAMETER :: HCRIT   = 1.0E-4 * 0.03  ! hfx min * tolerance
       REAL, PARAMETER :: SMALL   = 3.0E-5         ! Criterion for stability
@@ -169,6 +169,15 @@ contains
       REAL, ALLOCATABLE :: WSPD ( : )      ! wind speed [m/s]
       LOGICAL :: FIRSTIME = .TRUE.
       INTEGER :: STAT
+! Local Variables from PT3D_DEFN
+      INTEGER L1, L2, L3, L4, L5, L6
+      REAL    ZTOP            !Top height of Plume (m)
+      REAL    ZBOT            !Bottom height of Plume (m)
+      REAL    ZDIFF           !ZTOP - ZBOT (m)
+      REAL    DDZZ            !1.0 / ZDIFF
+      INTEGER    LTOP         !Layer of Plume top
+      INTEGER    LBOT         !Layer of Plume bottom
+      REAL TFRAC_MV           ! Plume Fraction Minimum Value
 ! Statement Functions:
       REAL    B, H, S, U, US  ! arguments
       REAL    NEUTRL          ! neutral-stability plume rise function
@@ -189,9 +198,12 @@ contains
       END IF
 
 
+ALLOCATE ( TV( EMLAYS ), TF( EMLAYS ), ZSTK( EMLAYS ), &
+           DDZF( EMLAYS ), DTHDZ( EMLAYS ), WSPD( EMLAYS ), &
+           STAT=STAT )
+
+
 !Begin PREPLM Calculation Functions -------------------
-      ALLOCATE ( TV( EMLAYS ), TF( EMLAYS ), ZSTK( EMLAYS ), &
-                 DDZF( EMLAYS ), DTHDZ( EMLAYS ), WSPD( EMLAYS ), STAT=STAT )
       IF ( STAT .NE. 0 ) THEN
          WRITE( *, *) ' Cannot allocate TV and TF in PREPLM'
 !         CALL M3MSG2( XMSG )
@@ -479,12 +491,123 @@ contains
 ! set final plume centerline height (ZPLM):
       ZPLM = STKHT + TWOTHD * ZPLM 
 
-      RETURN
+!End Briggs Plume Rise Calculation----------------PCC
 
-!End Briggs Plume Rise Calculation----------------
+!Begin Plume Fraction Computationsi from PT3D_DEFN----------------PCC
+
+! Determine the bottom and top heights of the plume.
+! Default Turner approach.  Plume thickness = amount of plume rise
+! Plume rise DH = ZPLM minus the stack height STKHT
+
+
+      ZTOP = STKHT + 1.5 * ( ZPLM - STKHT )
+      ZBOT = STKHT + 0.5 * ( ZPLM - STKHT )
+
+! Set up for computing plume fractions, assuming uniform distribution in
+! pressure
+! (~mass concentration -- minor hydrostatic assumption) from bottom to top.
+
+       IF ( ZTOP .LT. STKHT ) THEN
+!            WRITE( CINT,'( I8 )' ) S
+!            WRITE( XMSG,94010 ) 'ERROR: Top of plume is less than '
+!     &                          // 'top of stack for source:' // CINT
+!            CALL M3MESG( XMSG )
+!            WRITE( LOGDEV,* ) '    Zbot: ', ZBOT, ' Ztop: ', ZTOP
+!            WRITE( LOGDEV,* ) '    Stack Top: ', STK_HT( N )%ARRY( S ),
+!     &                        ' Plume Top: ', ZPLM
+!            CALL M3EXIT ( PNAME, JDATE, JTIME, XMSG, XSTAT2 )
+            WRITE( *, *) ' ERROR: Top of plume is less than top of stack for &
+                           source'
+            WRITE( *, *) '    Zbot: ', ZBOT, ' Ztop: ', ZTOP
+            WRITE( *, *) '    Stack Top: ', STKHT, ' Plume Top: ', ZPLM
+            STOP
+       END IF
+
+! Allocate plume to layers (compute layer plume fractions)
+
+      DO L1 = 1, EMLAYS - 1
+        IF ( ZBOT .LE. ZF( L1 ) ) THEN !bottom found at LBOT
+               LBOT = L1
+!               GO TO  122
+        IF ( ZTOP .LE. ZF( L1 ) ) THEN  ! plume in this layer
+
+            TFRAC( LBOT ) = 1.0
+            LTOP = LBOT
+
+            DO L2 = LBOT + 1, EMLAYS         ! fractions above plume 
+               TFRAC( L2 ) = 0.0
+            END DO
+
+         ELSE IF ( LBOT .EQ. EMLAYS ) THEN  ! plume above top layer
+
+            TFRAC( LBOT ) = 1.0
+
+            DO L3 = 1, EMLAYS - 1            ! fractions below plume
+               TFRAC( L3 ) = 0.0
+            END DO
+
+         ELSE                               ! plume crosses layers
+
+            DO L4 = LBOT + 1, EMLAYS
+               IF ( ZTOP .LE. ZF( L4 ) ) THEN
+                  LTOP = L4
+!                  GO TO 126
+                 ZDIFF = ZTOP - ZBOT
+                 IF ( ZDIFF .GT. 0.0 ) THEN
+
+                  DDZZ  = 1.0 / ZDIFF
+                  TFRAC( LBOT ) = DDZZ * ( ZF( LBOT ) - ZBOT )
+                  TFRAC( LTOP ) = DDZZ * ( ZTOP - ZF( LTOP-1 ) )
+                 ELSE   ! ZDIFF .le. 0
+!               WRITE( CINT,'( I8 )' ) S
+!               WRITE( XMSG,94020 )
+!     &            'Infinitely small plume created for source:,'
+!     &            // CINT // CRLF() // BLANK10
+!     &            // 'All emissions put in first layer.'
+!               CALL M3WARN( PNAME, JDATE, JTIME, XMSG )
+                  WRITE( *, *) '    Infinitely small plume created '
+                  WRITE( *, *) '    All emissions put in first layer.'
+                  LBOT = 1; LTOP = 1
+                  TFRAC( LBOT ) = 1.0
+                 END IF
+            DO L5 = LBOT + 1, LTOP - 1       ! layers in plume
+               TFRAC( L5 ) = DDZZ * ( ZF( L5 ) - ZF( L5-1 ) )
+            END DO
+            DO L6 = LTOP + 1, EMLAYS         ! fractions above plume
+               TFRAC( L6 ) = 0.0
+            END DO
+               END IF
+
+            END DO
+            LTOP = EMLAYS                   !  fallback
+            
+         END IF      
+
+        ELSE 
+         TFRAC( L1 ) = 0.0             ! fractions below plume
+        END IF
+      END DO
+         LBOT = EMLAYS                      !  fallback
+      
+!  If layer fractions are negative, put in the first layer
+      TFRAC_MV = MINVAL( TFRAC( 1:EMLAYS ) )
+         IF ( TFRAC_MV .LT. 0.0 ) THEN
+
+!            WRITE( CINT,'( I8 )' ) S
+!            WRITE( XMSG,94010 ) 'WARNING: One or more negative plume '
+!     &               // 'fractions found for source:' // CINT
+!     &               // CRLF() // BLANK10 // 'Plume reset to '
+!     &               // 'put all emissions in surface layer.'
+!            CALL M3MESG( XMSG )
+            WRITE( *, *) 'WARNING: One or more negative plume fractions found. '
+            WRITE( *, *) 'Plume reset to put all emissions in surface layer. '  
+            TFRAC( 1 ) = 1.0
+            TFRAC( 2:EMLAYS ) = 0.0
+         END IF
 
       DEALLOCATE ( TV, TF, ZSTK, DDZF, DTHDZ, WSPD )
 
+      RETURN
       END SUBROUTINE PLMRIS
 
 end module plumerise_briggs_mod

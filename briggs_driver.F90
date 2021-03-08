@@ -14,20 +14,6 @@
 
       implicit none
 
-!     met 3D input profile data that should be passed by rrfs_cmaq/ccpp
-      TYPE :: profile_type
-        integer :: lay          !Layer number
-        real    :: zf           !Layer surface heights (m)
-        real    :: zh           !Layer center  heights (m)
-        real    :: pres         !Pressures at full layer hts (hPa)
-        real    :: ta           !Temperatures (K)
-        real    :: qv           !Mixing Ratios (kg/kg)
-        real    :: uw           !X-direction winds (m/s)
-        real    :: vw           !Y-direction winds (m/s)
-      end TYPE profile_type
-
-      type(profile_type) :: profile(35)
-
 ! ! ... this block gives example emiss layers, 2D parameters, and stack inputs to 
 ! !     Briggs that would be passed by rrfs_cmaq/ccpp
 ! !     Ex values taken from NAQFC 5X (i=329;j=161) on Aug 01,2019
@@ -43,7 +29,22 @@
         real,    parameter    ::    stkve=27.0         !Stack exit velocity (m/s)
 
         integer i,i0
-        real plmHGT    !final plume centerline height (m)
+        real :: plmHGT               !final plume centerline height (m)
+        real :: plmFRAC  ( emlays )  ! final plume fractions
+
+!     met 3D input profile data that should be passed by rrfs_cmaq/ccpp
+      TYPE :: profile_type
+        integer :: lay          !Layer number
+        real    :: zf           !Layer surface heights (m)
+        real    :: zh           !Layer center  heights (m)
+        real    :: pres         !Pressures at full layer hts (hPa)
+        real    :: ta           !Temperatures (K)
+        real    :: qv           !Mixing Ratios (kg/kg)
+        real    :: uw           !X-direction winds (m/s)
+        real    :: vw           !Y-direction winds (m/s)
+      end TYPE profile_type
+
+      type(profile_type) :: profile( emlays )
 
 ! ... read met profile data that should be passed by rrfs_cmaq/ccpp
       open(9,  file='input_profile.txt',  status='old')
@@ -56,9 +57,10 @@
       call plmris(profile%zf,profile%zh,profile%ta,profile%qv, &
                   profile%uw,profile%vw,profile%pres, &
                   hfx,hmix,ustar,tsfc,psfc,emlays, &
-                  stkdm,stkht,stktk,stkve,plmHGT)
+                  stkdm,stkht,stktk,stkve,plmHGT,plmFRAC)
 
-      write(*,*) 'Stack Height (m):' , stkht
-      write(*,*) 'Plume Center Height (m):' , plmHGT
+      write(*,*)  'Stack Height (m):' , stkht
+      write(*,*)  'Plume Center Height (m):' , plmHGT
+      write(*,*)  'Plume Fractions:' , plmFRAC
 
     end program briggs_driver
