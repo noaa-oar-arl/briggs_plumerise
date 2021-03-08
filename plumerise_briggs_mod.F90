@@ -170,7 +170,6 @@ contains
       LOGICAL :: FIRSTIME = .TRUE.
       INTEGER :: STAT
 ! Local Variables from PT3D_DEFN
-      INTEGER L1, L2, L3, L4, L5, L6
       REAL    ZTOP            !Top height of Plume (m)
       REAL    ZBOT            !Bottom height of Plume (m)
       REAL    ZDIFF           !ZTOP - ZBOT (m)
