@@ -2,9 +2,8 @@
 
 !  the driver to run the Briggs plume rise algorithm
 !
-!  Ref: M. Sofiev et al., Evaluation of the smoke-injection
-!    height from wild-land fires using remote sensing data.
-!    Atmos. Chem. Phys., 12, 1995-2006, 2012.
+!  Ref: Briggs, G. A., 1969: Plume Rise. USAEC Critical 
+!  Review Series, TID-25075, NTIS, 81 pp.
 !
 !  History:
 !    Prototype: Patrick Campbell, 02/26/2021
